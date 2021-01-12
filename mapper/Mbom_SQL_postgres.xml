@@ -1,0 +1,804 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MbomDAO">
+
+	<!-- EBOM 리스트를 조회 -->
+    <select id="selectEbomSearch" resultType="java.util.HashMap">
+		SELECT
+			<!-- econo, pno, title, plmcarcode, plmerpsite, description, erprevbefore, erprevafter, eono, -->
+			e.econo, e.pno, e.title, e.plmcarcode, e.plmerpsite, e.erprevbefore, e.erprevafter,
+			e.devstep, e.epdpno, e.humname, to_char(e.regdate::TIMESTAMP, 'YYYY-MM-DD') regdate, e.state
+		FROM
+			plmeco e
+		LEFT JOIN
+			plmeffectiveitem f ON e.econo = f.econo
+		WHERE 1=1
+    	<if test='econo != null and !econo.equals("") '>
+            AND e.econo LIKE CONCAT('%', #{econo}, '%')
+        </if>
+        <if test='pno != null and !pno.equals("") '>
+            AND e.pno LIKE CONCAT('%', #{pno}, '%')
+        </if>
+        <if test='title != null and !title.equals("") '>
+            AND e.title LIKE CONCAT('%', #{title}, '%')
+        </if>
+        <if test='plmcarcode != null and !plmcarcode.equals("") '>
+            AND e.plmcarcode LIKE CONCAT('%', #{plmcarcode}, '%')
+        </if>
+        <if test='plmerpsite != null and !plmerpsite.equals("") '>
+            AND e.plmerpsite LIKE CONCAT('%', #{plmerpsite}, '%')
+        </if>
+        <!-- <if test='description != null and !description.equals("") '>
+            AND description LIKE CONCAT('%', #{description}, '%')
+        </if> -->
+        <if test='erprevbefore != null and !erprevbefore.equals("") '>
+            AND e.erprevbefore LIKE CONCAT('%', #{erprevbefore}, '%')
+        </if>
+        <if test='erprevafter != null and !erprevafter.equals("") '>
+            AND e.erprevafter LIKE CONCAT('%', #{erprevafter}, '%')
+        </if>
+        <if test='devstep != null and !devstep.equals("") '>
+            AND e.devstep LIKE CONCAT('%', #{devstep}, '%')
+        </if>
+        <if test='epdpno != null and !epdpno.equals("") '>
+            AND e.epdpno LIKE CONCAT('%', #{epdpno}, '%')
+        </if>
+        <if test='humname != null and !humname.equals("") '>
+            AND e.humname LIKE CONCAT('%', #{humname}, '%')
+        </if>
+    	<if test='regdate != null and !regdate.equals("") '>
+    		AND e.regdate BETWEEN #{regdate}::TIMESTAMP AND CAST(CONCAT(#{regdate},' 23:59:59') AS TIMESTAMP)
+    	</if>
+    	<if test='state != null and !state.equals("") '>
+            AND e.state = #{state}
+        </if>
+        <if test='subpno != null and !subpno.equals("") '>
+            AND f.pno = #{subpno}
+        </if>
+        group by e.econo, e.pno, e.title, e.plmcarcode, e.plmerpsite, e.erprevbefore, e.erprevafter, e.eono,
+				 e.devstep, e.epdpno, e.humname, e.regdate, e.state
+    	order by e.regdate desc
+        <!-- <if test='sSortCol != null and !sSortCol.equals("") and sSortDir != null and !sSortDir.equals("")'>
+            ${sSortDir}  
+        </if> -->
+        <if test='iDisplayStart != null and !iDisplayStart.equals("") and iDisplayLength != null  and !iDisplayLength.equals("") ' >
+            LIMIT ${iDisplayLength} OFFSET ${iDisplayStart}
+        </if>
+    </select>
+    
+    <!-- EBOM 리스트 총 갯수를 조회 -->
+    <select id="selectEbomSearchTotCnt" resultType="int">
+		SELECT
+			COUNT(*) AS totcnt
+		FROM 
+			plmeco
+		WHERE 1=1
+    	<if test='econo != null and !econo.equals("") '>
+            AND econo LIKE CONCAT('%', #{econo}, '%')
+        </if>
+        <if test='pno != null and !pno.equals("") '>
+            AND pno LIKE CONCAT('%', #{pno}, '%')
+        </if>
+        <if test='title != null and !title.equals("") '>
+            AND title LIKE CONCAT('%', #{title}, '%')
+        </if>
+        <if test='plmcarcode != null and !plmcarcode.equals("") '>
+            AND plmcarcode LIKE CONCAT('%', #{plmcarcode}, '%')
+        </if>
+        <if test='plmerpsite != null and !plmerpsite.equals("") '>
+            AND plmerpsite LIKE CONCAT('%', #{plmerpsite}, '%')
+        </if>
+        <!-- <if test='description != null and !description.equals("") '>
+            AND description LIKE CONCAT('%', #{description}, '%')
+        </if> -->
+        <if test='erprevbefore != null and !erprevbefore.equals("") '>
+            AND erprevbefore LIKE CONCAT('%', #{erprevbefore}, '%')
+        </if>
+        <if test='erprevafter != null and !erprevafter.equals("") '>
+            AND erprevafter LIKE CONCAT('%', #{erprevafter}, '%')
+        </if>
+        <if test='devstep != null and !devstep.equals("") '>
+            AND devstep LIKE CONCAT('%', #{devstep}, '%')
+        </if>
+        <if test='epdpno != null and !epdpno.equals("") '>
+            AND epdpno LIKE CONCAT('%', #{epdpno}, '%')
+        </if>
+        <if test='humname != null and !humname.equals("") '>
+            AND humname LIKE CONCAT('%', #{humname}, '%')
+        </if>
+    	<if test='regdate != null and !regdate.equals("") '>
+    		AND regdate BETWEEN #{regdate}::TIMESTAMP AND CAST(CONCAT(#{regdate},' 23:59:59') AS TIMESTAMP)
+    	</if>
+    	<if test='state != null and !state.equals("") '>
+            AND state = #{state}
+        </if>
+	</select>
+    
+    <!-- MBOM 상세정보를 조회 -->
+    <select id="selectEbomSearchDetail" resultType="java.util.HashMap">
+		SELECT
+			econo, pno, title, plmcarcode, plmerpsite, erprevbefore, erprevafter, eono, 
+			devstep, epdpno, humname, to_char(regdate::TIMESTAMP, 'YYYY-MM-DD') regdate
+		FROM
+			plmeco
+		WHERE 1=1 AND econo = #{econo} AND pno = #{pno} AND erprevafter = #{erprevafter}
+    </select> 
+    
+    <!-- 설변대상아이템 리스트를 조회 -->
+    <select id="selectEffectiveItemSearch" resultType="java.util.HashMap">
+    	select 
+    		p.pno, p.revision, p.name, p.plmtype, p.product, p.state 
+		from 
+			plmeco pe
+		left join 
+			plmeffectiveitem pf on pe.econo = pf.econo and pe.erprevafter = pf.revision
+		left join 
+			plmpart p on p.pno = pf.pno and p.revision = pf.revision
+		where 
+			pe.econo = #{econo} and pe.pno = #{oripno} and pe.erprevafter = #{orirev}
+        order by p.revision
+        <!-- <if test='sSortCol != null and !sSortCol.equals("") '>
+        	ORDER BY ${sSortCol} 
+        </if>
+        <if test='sSortCol != null and !sSortCol.equals("") and sSortDir != null and !sSortDir.equals("")'>
+            ${sSortDir}  
+        </if> -->
+        <if test='iDisplayStart != null and !iDisplayStart.equals("") and iDisplayLength != null  and !iDisplayLength.equals("") ' >
+            LIMIT ${iDisplayLength} OFFSET ${iDisplayStart}
+        </if>
+	</select>
+	
+	<!-- 설변대상아이템 총 갯수 조회 -->
+    <select id="selectEffectiveItemSearchTotCnt" resultType="int">
+    	select 
+    		COUNT(*) AS totcnt
+    	from 
+			plmeco pe
+		left join 
+			plmeffectiveitem pf on pe.econo = pf.econo and pe.erprevafter = pf.revision
+		left join 
+			plmpart p on p.pno = pf.pno and p.revision = pf.revision
+		where 
+			pe.econo = #{econo} and pe.pno = #{oripno} and pe.erprevafter = #{orirev}
+	</select>
+    
+    <!-- 부자재마스터 리스트를 조회 -->
+    <select id="selectMbomMasterSearch" resultType="java.util.HashMap">
+		SELECT
+			m.oid, m.name, m.humid, to_char(m.regdate::TIMESTAMP, 'YYYY-MM-DD') regdate, 
+			to_char(m.moddate::TIMESTAMP, 'YYYY-MM-DD') moddate
+		FROM
+			mbommst m
+		WHERE 1=1
+    	<if test='name != null and !name.equals("") '>
+            AND m.name LIKE CONCAT('%', #{name}, '%')
+        </if>
+        <if test='humid != null and !humid.equals("") '>
+            AND m.humid LIKE CONCAT('%', #{humid}, '%')
+        </if>
+    	<if test='regdate != null and !regdate.equals("") '>
+    		AND m.regdate BETWEEN #{regdate}::TIMESTAMP AND CAST(CONCAT(#{regdate},' 23:59:59') AS TIMESTAMP)
+    	</if>
+    	<if test='moddate != null and !moddate.equals("") '>
+    		AND m.moddate BETWEEN #{moddate}::TIMESTAMP AND CAST(CONCAT(#{moddate},' 23:59:59') AS TIMESTAMP)
+    	</if>
+    	<if test='subname != null and !subname.equals("") '>
+            AND m.name LIKE CONCAT('%', #{subname}, '%')
+        </if>
+    	group by m.oid, m.name, m.humid, m.regdate, m.moddate
+    	order by m.regdate desc, m.name
+        <!-- <if test='sSortCol != null and !sSortCol.equals("") and sSortDir != null and !sSortDir.equals("")'>
+            ${sSortDir}  
+        </if> -->
+        <if test='iDisplayStart != null and !iDisplayStart.equals("") and iDisplayLength != null  and !iDisplayLength.equals("") ' >
+            LIMIT ${iDisplayLength} OFFSET ${iDisplayStart}
+        </if>        
+    </select>
+    
+    <!-- 부자재마스터 리스트 총 갯수를 조회 -->
+    <select id="selectMbomMasterSearchTotCnt" resultType="int">
+		SELECT
+			COUNT(*) AS totcnt
+		FROM 
+			mbommst m
+		WHERE 1=1
+    	<if test='name != null and !name.equals("") '>
+            AND m.name LIKE CONCAT('%', #{name}, '%')
+        </if>
+        <if test='humid != null and !humid.equals("") '>
+            AND m.humid LIKE CONCAT('%', #{humid}, '%')
+        </if>
+    	<if test='regdate != null and !regdate.equals("") '>
+    		AND m.regdate BETWEEN #{regdate}::TIMESTAMP AND CAST(CONCAT(#{regdate},' 23:59:59') AS TIMESTAMP)
+    	</if>
+    	<if test='moddate != null and !moddate.equals("") '>
+    		AND m.moddate BETWEEN #{moddate}::TIMESTAMP AND CAST(CONCAT(#{moddate},' 23:59:59') AS TIMESTAMP)
+    	</if>
+	</select>
+	
+	<!-- 상위품번 리스트를 조회 -->
+    <select id="selectParentPnoSearch" resultType="java.util.HashMap">
+		SELECT 
+			parentpno as pno, parentrev as revision
+		FROM plmebom		
+		WHERE econo = #{econo} and parentrev = #{orirev}
+        group by parentpno, parentrev
+    	order by parentpno
+        <if test='iDisplayStart != null and !iDisplayStart.equals("") and iDisplayLength != null  and !iDisplayLength.equals("") ' >
+            LIMIT ${iDisplayLength} OFFSET ${iDisplayStart}
+        </if>        
+    </select>
+    
+    <!-- 상위품번 리스트 총 갯수를 조회 -->
+    <select id="selectParentPnoSearchTotCnt" resultType="int">
+		SELECT
+			COUNT(*) AS totcnt
+		FROM (
+			SELECT 
+				parentpno as pno, parentrev as revision
+			FROM plmebom		
+			WHERE econo = #{econo} and parentrev = #{orirev}
+	        group by parentpno, parentrev
+	    	order by parentpno
+    	)a    	
+	</select>
+	
+	<!-- 부자재 리스트를 조회 -->
+    <select id="selectSubMaterialsSearch" resultType="java.util.HashMap">
+		SELECT
+			mt.oid as smoid, m.name, m.oid, mt.pno, mt.usage, mt.unit, mt.humid,
+			to_char(mt.regdate::TIMESTAMP, 'YYYY-MM-DD') regdate, mt.modhumid, to_char(mt.moddate::TIMESTAMP, 'YYYY-MM-DD') moddate
+		FROM
+			mbommaterial mt
+		LEFT JOIN 
+			mbommst m on m.oid = mt.mstoid
+		WHERE 1=1
+		<if test='oid != null and !oid.equals("") '>
+            AND mt.mstoid LIKE CONCAT('%', #{oid}, '%')
+        </if>
+        order by m.name
+        <if test='iDisplayStart != null and !iDisplayStart.equals("") and iDisplayLength != null  and !iDisplayLength.equals("") ' >
+            LIMIT ${iDisplayLength} OFFSET ${iDisplayStart}
+        </if>
+    	<!-- <if test='name != null and !name.equals("") '>
+            AND m.name LIKE CONCAT('%', #{name}, '%')
+        </if>
+        <if test='humid != null and !humid.equals("") '>
+            AND mt.humid LIKE CONCAT('%', #{humid}, '%')
+        </if>
+    	<if test='regdate != null and !regdate.equals("") '>
+    		AND mt.regdate BETWEEN #{regdate}::TIMESTAMP AND CAST(CONCAT(#{regdate},' 23:59:59') AS TIMESTAMP)
+    	</if>
+    	<if test='moddate != null and !moddate.equals("") '>
+    		AND mt.moddate BETWEEN #{moddate}::TIMESTAMP AND CAST(CONCAT(#{moddate},' 23:59:59') AS TIMESTAMP)
+    	</if>
+    	order by m.name
+        <if test='sSortCol != null and !sSortCol.equals("") and sSortDir != null and !sSortDir.equals("")'>
+            ${sSortDir}  
+        </if>
+        <if test='iDisplayStart != null and !iDisplayStart.equals("") and iDisplayLength != null  and !iDisplayLength.equals("") ' >
+            LIMIT ${iDisplayLength} OFFSET ${iDisplayStart}
+        </if> -->
+    </select>
+    
+    <!-- 부자재 리스트 총 갯수를 조회 -->
+    <select id="selectSubMaterialsSearchTotCnt" resultType="int">
+		SELECT
+			COUNT(mt.*) AS totcnt
+		FROM
+			mbommaterial mt
+		LEFT JOIN 
+			mbommst m on m.oid = mt.mstoid
+		WHERE 1=1
+		<if test='oid != null and !oid.equals("") '>
+            AND mt.mstoid LIKE CONCAT('%', #{oid}, '%')
+        </if>
+    	<!-- <if test='name != null and !name.equals("") '>
+            AND m.name LIKE CONCAT('%', #{name}, '%')
+        </if>
+        <if test='humid != null and !humid.equals("") '>
+            AND mt.humid LIKE CONCAT('%', #{humid}, '%')
+        </if>
+    	<if test='regdate != null and !regdate.equals("") '>
+    		AND mt.regdate BETWEEN #{regdate}::TIMESTAMP AND CAST(CONCAT(#{regdate},' 23:59:59') AS TIMESTAMP)
+    	</if>
+    	<if test='moddate != null and !moddate.equals("") '>
+    		AND mt.moddate BETWEEN #{moddate}::TIMESTAMP AND CAST(CONCAT(#{moddate},' 23:59:59') AS TIMESTAMP)
+    	</if> -->
+	</select>
+	
+    <!-- 부자재마스터를 조회 -->
+    <select id="selectMbomMasterData" resultType="java.util.HashMap">
+		SELECT
+			oid, name, humid, to_char(regdate::TIMESTAMP, 'YYYY-MM-DD') regdate, 
+			to_char(moddate::TIMESTAMP, 'YYYY-MM-DD') moddate
+		FROM
+			mbommst m
+		WHERE 1=1 AND oid = #{oid}
+    </select>
+	
+	<!-- MBOM 템플릿 데이터 중복체크 -->
+    <select id="selectDupleChk" resultType="int">
+   		SELECT
+   			COUNT(*)
+		FROM 
+			yurabmanalysistemplate
+		WHERE 1 = 1
+			AND oid = #{oid}	
+	</select>
+	
+	<!-- 부자재마스터 항목을 등록 -->
+	<insert id="insertMbomMasterData">
+	    INSERT INTO mbommst (oid, name, humid, regdate, moddate)
+    	VALUES (#{oid}, #{name}, #{reguserid}, now(), now())
+	</insert>
+	
+	<!-- 부자재마스터 항목을 수정 -->
+	<update id="updateMbomMasterData">
+        UPDATE mbommst
+   		SET name = #{name}, modhumid = #{reguserid}, moddate = now()
+   		WHERE oid = #{oid} 
+	</update>
+	
+	<!-- 부자재마스터 항목을 삭제 -->
+	<delete id="deleteMbomMasterData">
+        DELETE FROM
+        	mbommst                
+		WHERE 1 = 1
+			AND oid = #{oid}
+	</delete>
+	<delete id="deleteMbomMasterData2">
+        DELETE FROM
+        	mbommaterial                
+		WHERE 1 = 1
+			AND mstoid = #{oid}
+	</delete>
+	
+	<!-- 부자재 항목을 등록 -->
+	<insert id="insertMbomSubMaterialsData">
+	    INSERT INTO mbommaterial (oid, mstoid, pno, usage, unit, humid, regdate, moddate)
+    	VALUES (#{smoid}, #{mtoid}, #{pno}, #{usage}, #{unit}, #{reguserid}, now(), now())
+	</insert>
+	
+	<!-- 부자재 항목을 수정 -->
+	<update id="updateMbomSubMaterialsData">
+        UPDATE mbommaterial
+   		SET pno = #{pno}, usage = #{usage}, unit = #{unit}, modhumid = #{reguserid}, moddate = now()
+   		WHERE oid = #{smoid} 
+	</update>
+	
+	<!-- 부자재 상세정보를 조회 -->
+    <select id="selectSubMaterialsDetail" resultType="java.util.HashMap">
+		SELECT
+			oid, mstoid, pno, usage, unit, humid, to_char(regdate::TIMESTAMP, 'YYYY-MM-DD') regdate, 
+			modhumid, to_char(moddate::TIMESTAMP, 'YYYY-MM-DD') moddate
+		FROM
+			mbommaterial
+		WHERE 1=1 AND oid = #{smoid}		        
+    </select>
+    
+    <!-- 부자재 상세정보를 삭제 -->
+	<delete id="deleteMbomSubMaterials">
+        DELETE FROM
+        	mbommaterial                
+		WHERE 1 = 1
+			AND oid = #{smoid}
+	</delete>
+    
+    <!-- ebom 리스트를 조회 -->
+    <select id="selectPlmEbomDataSearch" resultType="java.util.HashMap">
+	    select 
+			e.parentpno, e.parentrev, e.pno, e.usage, e.unit, 'y' as flag
+		from 
+			plmeco p
+		inner join
+			plmeffectiveitem pe on p.econo = pe.econo and p.erprevafter = pe.revision
+		inner join
+			plmebom e on p.econo = e.econo and pe.pno = e.parentpno and pe.revision = e.parentrev
+		where p.econo = #{econo} and p.pno = #{oripno} and p.erprevafter = #{orirev}
+		order by flag, parentpno, pno
+	</select>
+	
+	<!-- ebom 총 갯수 조회 -->
+    <select id="selectPlmEbomDataSearchTotCnt" resultType="int">
+    	select 
+    		COUNT(*) AS totcnt
+    	from 
+			plmeco p
+		inner join
+			plmeffectiveitem pe on p.econo = pe.econo and p.erprevafter = pe.revision
+		inner join
+			plmebom e on p.econo = e.econo and pe.pno = e.parentpno and pe.revision = e.parentrev
+		where p.econo = #{econo} and p.pno = #{oripno} and p.erprevafter = #{orirev}
+	</select>
+	
+	<!-- ebom 리스트를 조회 2-->
+    <select id="selectAddPlmEbomData" resultType="java.util.HashMap">
+    	select 
+			'-' as parentpno,'-' as parentrev, pno, usage, unit, '-' as flag
+		from 
+			mbommaterial    	
+		where 1=1
+		<if test='mstoid != null and !mstoid.equals("") '>
+            AND mstoid = #{mstoid}
+        </if>
+        order by pno
+        <if test='iDisplayStart != null and !iDisplayStart.equals("") and iDisplayLength != null  and !iDisplayLength.equals("") ' >
+            LIMIT ${iDisplayLength} OFFSET ${iDisplayStart}
+        </if>
+	</select>
+	
+	<!-- ebom 총 갯수 조회 2-->
+    <select id="selectAddPlmEbomDataTotCnt" resultType="int">
+    	select 
+    		COUNT(*) AS totcnt
+    	from 
+    		mbommaterial
+		where 1=1
+		<if test='mstoid != null and !mstoid.equals("") '>
+            AND mstoid = #{mstoid}
+        </if>
+	</select>
+	
+	<!-- MBOM 리스트를 조회 -->
+    <select id="selectMbomSearch" resultType="java.util.HashMap">
+		SELECT 
+			mf.econo, mf.mbrno, pe.pno, pe.erprevafter, mf.humid, to_char(mf.regdate::TIMESTAMP, 'YYYY-MM-DD') regdate, mf.state
+		FROM 
+			mbomfinal mf
+		LEFT JOIN
+			plmeco pe ON mf.econo = pe.econo and pe.erprevafter = (select parentrev from mbomecorel where mbrno = mf.mbrno limit 1)
+		WHERE 1=1		
+    	<if test='econo != null and !econo.equals("") '>
+            AND mf.econo LIKE CONCAT('%', #{econo}, '%')
+        </if>
+        <if test='mbrno != null and !mbrno.equals("") '>
+            AND mf.mbrno LIKE CONCAT('%', #{mbrno}, '%')
+        </if>
+        <if test='pno != null and !pno.equals("") '>
+            AND pe.pno LIKE CONCAT('%', #{pno}, '%')
+        </if>
+        <if test='pnorev != null and !pnorev.equals("") '>
+            AND pe.erprevafter LIKE CONCAT('%', #{pnorev}, '%')
+        </if>
+        <if test='humid != null and !humid.equals("") '>
+            AND mf.humid LIKE CONCAT('%', #{humid}, '%')
+        </if>
+    	<if test='regdate != null and !regdate.equals("") '>
+    		AND mf.regdate BETWEEN #{regdate}::TIMESTAMP AND CAST(CONCAT(#{regdate},' 23:59:59') AS TIMESTAMP)
+    	</if>
+    	<if test='state != null and !state.equals("") '>
+            AND mf.state LIKE CONCAT('%', #{state}, '%')
+        </if>
+    	order by regdate desc
+        <!-- <if test='sSortCol != null and !sSortCol.equals("") and sSortDir != null and !sSortDir.equals("")'>
+            ${sSortDir}  
+        </if> -->
+        <if test='iDisplayStart != null and !iDisplayStart.equals("") and iDisplayLength != null  and !iDisplayLength.equals("") ' >
+            LIMIT ${iDisplayLength} OFFSET ${iDisplayStart}
+        </if>
+    </select>
+    
+    <!-- MBOM 리스트 총 갯수를 조회 -->
+    <select id="selectMbomSearchTotCnt" resultType="int">
+		SELECT
+			COUNT(*) AS totcnt
+		FROM
+			mbomfinal mf
+		LEFT JOIN
+			plmeco pe ON mf.econo = pe.econo and pe.erprevafter = (select parentrev from mbomecorel where mbrno = mf.mbrno limit 1)
+		WHERE 1=1
+    	<if test='econo != null and !econo.equals("") '>
+            AND mf.econo LIKE CONCAT('%', #{econo}, '%')
+        </if>
+        <if test='mbrno != null and !mbrno.equals("") '>
+            AND mf.mbrno LIKE CONCAT('%', #{mbrno}, '%')
+        </if>
+        <if test='pno != null and !pno.equals("") '>
+            AND pe.pno LIKE CONCAT('%', #{pno}, '%')
+        </if>
+        <if test='pnorev != null and !pnorev.equals("") '>
+            AND pe.erprevafter LIKE CONCAT('%', #{pnorev}, '%')
+        </if>
+        <if test='humid != null and !humid.equals("") '>
+            AND mf.humid LIKE CONCAT('%', #{humid}, '%')
+        </if>
+    	<if test='regdate != null and !regdate.equals("") '>
+    		AND mf.regdate BETWEEN #{regdate}::TIMESTAMP AND CAST(CONCAT(#{regdate},' 23:59:59') AS TIMESTAMP)
+    	</if>
+    	<if test='state != null and !state.equals("") '>
+            AND mf.state LIKE CONCAT('%', #{state}, '%')
+        </if>
+	</select>
+	
+	<!-- MBOM Final 데이터를 등록 -->
+	<insert id="insertMbomFinalData">
+		INSERT INTO mbomfinal (mbrno, econo, humid, regdate, state)
+    	VALUES (#{mbrno}, #{econo}, #{reguserid}, now(), 'N')
+	</insert>
+	
+	<!-- MBOM ECO REL 데이터를 등록 -->
+	<insert id="insertMbomEcoRelData">
+		INSERT INTO mbomecorel (mbrno, mstoid, econo, humid, regdate, parentpno, parentrev)
+    	VALUES (#{mbrno}, #{mstoid}, #{econo}, #{humid}, now(), #{parentpno}, #{parentrev})
+	</insert>
+	
+	<!-- eco 상태를 수정 -->
+	<update id="updateEcoState">
+        UPDATE plmeco
+   		SET state = 'Y'
+   		WHERE econo = #{econo} and pno = #{oripno} and erprevafter = #{orirev} 
+	</update>
+	
+	<!-- mbom 상세 리스트를 조회 -->
+    <select id="selectMbomDetail" resultType="java.util.HashMap">
+    	SELECT 
+			e.parentpno, e.parentrev, e.pno, e.usage, e.unit, 'y' as flag
+		from 
+			plmeco p
+		inner join
+			plmeffectiveitem pe on p.econo = pe.econo and p.erprevafter = pe.revision
+		inner join
+			plmebom e on p.econo = e.econo and pe.pno = e.parentpno and pe.revision = e.parentrev
+		where p.econo = #{eco} and p.erprevafter = (select parentrev from mbomecorel where mbrno = #{mbo} limit 1)
+		UNION ALL
+		SELECT 
+			mr.parentpno, mr.parentrev, m.pno, m.usage, m.unit, '-' as flag
+		FROM 
+			mbomecorel mr 
+		INNER JOIN 
+			mbommaterial m on m.mstoid = mr.mstoid
+		WHERE 
+			mr.mbrno = #{mbo} and mr.econo = #{eco}
+		ORDER BY 
+			flag, parentpno, pno
+	</select>
+	
+	<!-- mbom 상세 리스트 총 갯수 조회 -->
+    <select id="selectMbomDetailTotCnt" resultType="int">
+    	select 
+    		COUNT(*) AS totcnt
+    	from (
+	    	SELECT		e.parentpno, e.parentrev, e.pno, e.usage, e.unit, 'y' as flag
+			FROM		plmeco p
+			inner join  plmeffectiveitem pe on p.econo = pe.econo and p.erprevafter = pe.revision
+			inner join  plmebom e on p.econo = e.econo and pe.pno = e.parentpno and pe.revision = e.parentrev
+			WHERE		p.econo = #{eco} and p.erprevafter = (select parentrev from mbomecorel where mbrno = #{mbo} limit 1)
+			UNION ALL
+			SELECT		mr.parentpno, mr.parentrev, m.pno, m.usage, m.unit, '-' as flag
+			FROM		mbomecorel mr 
+			INNER JOIN	mbommaterial m on m.mstoid = mr.mstoid
+			WHERE		mr.mbrno = #{mbo} and mr.econo = #{eco}
+			ORDER BY	flag, parentpno
+		)a
+	</select>
+	
+	<!-- 파트정보를 조회 -->
+    <select id="selectPnoSearch" resultType="java.util.HashMap">
+		SELECT 
+			pno, revision
+		FROM 
+			plmpart
+		WHERE 1=1
+        <if test='partname != null and !partname.equals("") '>
+            AND pno LIKE CONCAT('%', #{partname}, '%')
+        </if>
+    	order by pno
+        <if test='iDisplayStart != null and !iDisplayStart.equals("") and iDisplayLength != null  and !iDisplayLength.equals("") ' >
+            LIMIT ${iDisplayLength} OFFSET ${iDisplayStart}
+        </if>
+    </select>
+    
+    <!-- 파트정보 총 갯수를 조회 -->
+    <select id="selectPnoSearchTotCnt" resultType="int">
+		SELECT
+			COUNT(*) AS totcnt
+		FROM 
+			plmpart
+		WHERE 1=1
+        <if test='partname != null and !partname.equals("") '>
+            AND pno LIKE CONCAT('%', #{partname}, '%')
+        </if>
+	</select>
+	
+	<!-- MBOM 부자재조합 관계 리스트를 조회 -->
+    <select id="selectMbomRelationData" resultType="java.util.HashMap">
+	    select 
+	    	mc.parentpno, mc.parentrev, m.name
+		from 
+			mbomecorel mc
+		left join 
+			mbommst m on mc.mstoid = m.oid
+		where 1=1
+		<if test='mbrno != null and !mbrno.equals("") '>
+            AND mc.mbrno = #{mbrno}
+        </if>
+		order by mc.parentpno
+        <if test='iDisplayStart != null and !iDisplayStart.equals("") and iDisplayLength != null  and !iDisplayLength.equals("") ' >
+            LIMIT ${iDisplayLength} OFFSET ${iDisplayStart}
+        </if>
+	</select>
+	
+	<!-- MBOM 부자재조합 관계 총 갯수 조회 -->
+    <select id="selectMbomRelationDataTotCnt" resultType="int">
+    	select 
+    		COUNT(*) AS totcnt
+    	from 
+			mbomecorel mc
+		left join 
+			mbommst m on mc.mstoid = m.oid
+		where 1=1
+		<if test='mbrno != null and !mbrno.equals("") '>
+            AND mc.mbrno = #{mbrno}
+        </if>
+	</select>
+	
+	<!-- MBOM 부자재 조합을 삭제 -->
+	<delete id="deleteMbomEcoRelData">
+        DELETE FROM
+        	mbomecorel                
+		WHERE 1 = 1
+			AND mbrno = #{mbo}
+	</delete>
+	<delete id="deleteMbomFinalData">
+        DELETE FROM
+        	mbomfinal                
+		WHERE 1 = 1
+			AND mbrno = #{mbo}
+	</delete>
+	<update id="updateMbomEcoState">
+        UPDATE plmeco
+   		SET state = 'N'
+   		WHERE econo = #{eco} and erprevafter = (select parentrev from mbomecorel where mbrno = #{mbo} limit 1)
+	</update>
+	
+	<!-- SAP 인터페이스 데이터를 조회한다. -->
+    <select id="selectSAPEcoData" resultType="java.util.HashMap">
+    	SELECT 
+    		e.erperpsite, e.econo, e.epdpno, e.eono, e.title, to_char(e.regdate, 'yyyymmdd') as regdate, e.erpcarcode, 
+    		p.erptype, to_char(e.regdateoriginal, 'yyyymmdd') as regdateoriginal, p.yuradesigngroup
+		FROM 
+			mbomfinal m
+		INNER JOIN
+			plmeco e on m.econo = e.econo
+		INNER JOIN 
+			plmpart p on e.pno = p.pno and e.erprevafter = p.revision
+		WHERE
+			m.mbrno = #{mbrno}        
+    </select>
+    
+    <select id="selectSAPPartData" resultType="java.util.HashMap">
+    	SELECT 
+    		e.erperpsite, p.pno, p.name, p.product, p.revision, p.yuraunit, e.erpcarcode, p.erptype, p.yuraweight, 
+    		p.yurasupplier, e.plmerpsite, p.yuraseries, p.yuradesigngroupetc, p.yuramatnrno, e.humname
+		FROM 
+			plmeco e
+		LEFT JOIN
+			plmeffectiveitem pe on e.econo = pe.econo and e.erprevafter = pe.revision
+		LEFT JOIN 
+			plmpart p on pe.pno = p.pno and e.erprevafter = p.revision
+		WHERE
+			e.econo = #{econo}
+		AND
+			p.yuraisrepresentativepart = 'FALSE'
+		AND
+			p.revision = #{ecorev}
+    </select>
+    
+    <select id="selectSAPAffectItemData" resultType="java.util.HashMap">
+    	SELECT 
+    		e.erperpsite, e.econo, e.humname, e.epdpno, e.eono, p.pno, p.revision, p.yuraisrepresentativepart
+		FROM 
+			plmeco e
+		LEFT JOIN
+			plmeffectiveitem pe on e.econo = pe.econo and e.erprevafter = pe.revision
+		LEFT JOIN 
+			plmpart p on pe.pno = p.pno and e.erprevafter = p.revision
+		WHERE
+			e.econo = #{econo} and e.erprevafter = #{ecorev}
+    </select>
+	
+	<select id="selectSAPMbomData" resultType="java.util.HashMap">
+    	SELECT 
+			e.parentpno, e.parentrev, e.pno, e.usage, e.unit, 'y' as flag
+		from 
+			plmeco p
+		inner join
+			plmeffectiveitem pe on p.econo = pe.econo and p.erprevafter = pe.revision
+		inner join
+			plmebom e on p.econo = e.econo and pe.pno = e.parentpno and pe.revision = e.parentrev
+		where p.econo = #{eco} and p.erprevafter = (select parentrev from mbomecorel where mbrno = #{mbo} limit 1)
+		UNION ALL
+		SELECT 
+			mr.parentpno, mr.parentrev, m.pno, m.usage, m.unit, '-' as flag
+		FROM 
+			mbomecorel mr 
+		INNER JOIN 
+			mbommaterial m on m.mstoid = mr.mstoid
+		WHERE 
+			mr.mbrno = #{mbo} and mr.econo = #{eco}
+		ORDER BY 
+			flag, parentpno, pno
+    </select>
+    
+    <!-- SAP 상태를 수정 -->
+	<update id="updateMbomSapState">
+        UPDATE mbomfinal
+   		SET state = 'Y'
+   		WHERE mbrno = #{mbo} and econo = #{eco}  
+	</update>
+    
+    <!-- 개정할 파트를 조회 -->
+    <select id="selectRevisionPartInfo" resultType="java.util.HashMap">
+    	SELECT 
+			*
+		FROM
+			plmpart
+		WHERE 
+			pno = #{pno} and revision = #{rev}
+    </select>
+    
+    <!-- 개정 ECO를 insert select -->
+	<insert id="insertSelectPlmEco">
+		INSERT INTO plmeco (
+			SELECT econo, pno, title, description, humname, humid, regdate, #{pnorev} as erprevbefore, #{level} as erprevafter, eono, devstep, 
+					epdpno, #{level} as pnorev, erpcarcode, plmcarcode, erperpsite, plmerpsite, yuraecocreateteam, yuraecocreateuser, 
+					yuraecodrawingtype, yuraecoitemtype, yuraecorequest, yuraecoreference, 'N' as state, regdateoriginal
+			FROM plmeco
+			WHERE econo = #{econo} and pno = #{pno} and erprevafter = #{pnorev}
+		)
+	</insert>
+    
+    <!-- 개정 PART를 insert select -->
+	<insert id="insertSelectPlmPart">
+		INSERT INTO plmpart (
+			SELECT #{pno} as pno, #{level} as revision, name, product, state, erptype, plmtype, yuraunit, yuraoempartno, yurasupplierpartno, yuramatnrno, 
+					yuraisrepresentativepart, yuraoemcompany, yuracarname, yuraproductionarea, yurasupplier, yurapartgroup, 
+					originator, yuraweight, yuraseries, yuradesigngroup, yuradesigngroupetc, type
+			FROM plmpart 
+			WHERE pno = #{pno} and revision = #{rev}
+		)
+	</insert>
+	
+	<!-- 개정 effectiveitem를 insert select -->
+	<insert id="insertSelectPlmEffectiveitem">
+		INSERT INTO plmeffectiveitem (
+			SELECT #{econo} as econo, #{pno} as pno, #{level} as revision
+			FROM plmeffectiveitem
+			WHERE econo = #{econo} and pno = #{pno} and revision = #{rev}
+		)
+	</insert>
+	
+	<!-- 개정할 ebom를 조회 -->
+    <select id="selectPreRevisionEbomInfo" resultType="java.util.HashMap">
+    	SELECT 
+			econo, parentpno, parentrev, pno, usage, unit
+		FROM
+			plmebom
+		WHERE 
+			econo = #{econo} and parentpno = #{pno} and parentrev = #{rev}
+    </select>
+    
+    <!-- 개정 ebom를 insert select -->
+	<insert id="insertSelectPlmEbom">
+		INSERT INTO plmebom (
+			SELECT econo, parentpno, #{level} as parentrev, pno, usage, unit
+			FROM plmebom
+			WHERE econo = #{econo} and parentpno = #{parentpno} and parentrev = #{parentrev} and pno = #{pno} and usage = #{usage} and unit = #{unit} limit 1
+		)
+	</insert>
+	
+	
+	<!-- 비밀번호 전체 초기화-->
+    <select id="selecthum" resultType="java.util.HashMap">
+    	select esntl_id as esntlid, password, emplyr_id as emplyrid from lettnemplyrinfo 
+    </select>
+    
+	<update id="updatehum">
+        update lettnemplyrinfo
+        set password = #{encryptPass}, PWLASTCHG = to_char(now(), 'YYYY-MM-DD') 
+   		where esntl_id = #{uniqId}
+	</update>
+	
+ </mapper>
